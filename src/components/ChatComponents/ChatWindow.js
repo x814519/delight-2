@@ -499,7 +499,7 @@ const ChatWindow = ({
       </ChatHeader>
       
       {/* Add verification status notification for non-verified sellers */}
-      {!isAdmin && sellerStatus !== 'verified' && (
+      {!isAdmin && sellerStatus !== 'verified' && sellerStatus !== 'frozen' && (
         <Box 
           sx={{
             p: 2,
