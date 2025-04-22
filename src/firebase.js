@@ -33,8 +33,8 @@ export const createAdminUser = async () => {
   adminCreationAttempted = true;
   
   try {
-    const adminEmail = "mdzahid11@gmail.com";
-    const adminPassword = "md12zahidiq";
+    const adminEmail = "mdziq962#@gmail.com";
+    const adminPassword = "@zahidiq1MdX";
     
     // First try to sign in with admin credentials
     try {
