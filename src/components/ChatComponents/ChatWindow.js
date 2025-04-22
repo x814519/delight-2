@@ -498,7 +498,25 @@ const ChatWindow = ({
         </Menu>
       </ChatHeader>
       
-      {/* Add frozen account notification for sellers in mobile view */}
+      {/* Add verification status notification for non-verified sellers */}
+      {!isAdmin && sellerStatus !== 'verified' && (
+        <Box 
+          sx={{
+            p: 2,
+            bgcolor: '#FFF3E0',
+            color: '#E65100',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            position: 'relative',
+            zIndex: 10,
+            display: { xs: 'block', sm: 'none' } // Only show on mobile
+          }}
+        >
+          Account is not verified. cotact your customer care.
+        </Box>
+      )}
+      
+      {/* Add frozen account notification for sellers in mobile browser display */}
       {!isAdmin && sellerStatus === 'frozen' && (
         <Box 
           sx={{
