@@ -913,9 +913,9 @@ const HomePage = ({ isAuthenticated, searchTerm }) => {
           borderRadius: 2,
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <Typography variant="h6" fontWeight="medium" color="text.secondary" align="center" sx={{ mb: 2 }}>
+          {/* <Typography variant="h6" fontWeight="medium" color="text.secondary" align="center" sx={{ mb: 2 }}>
             Shop by Category
-          </Typography>
+          </Typography> */}
           <Box sx={{ 
             display: 'flex', 
             flexWrap: { xs: 'nowrap', sm: 'wrap' },
