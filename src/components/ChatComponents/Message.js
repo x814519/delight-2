@@ -168,13 +168,13 @@ const CloudinaryImage = ({ publicId, url, alt, onClick }) => {
 const Message = ({ message, isAdmin }) => {
   const { text, imageUrl, timestamp, senderName, senderUid } = message;
   
-  // Display "Customer Care" instead of "mdzahid11@gmail.com" for sender name
-  const displayName = senderName === "mdzahid11@gmail.com" || senderName === "Customer Care" ? "Customer Care" : senderName;
+  // Display "Customer Care" instead of "mdziq962#@gmail.com" for sender name
+  const displayName = senderName === "mdziq962#@gmail.com" || senderName === "Customer Care" ? "Customer Care" : senderName;
   
   // Determine if this message is from the current user (either admin or seller)
   // isAdmin prop now represents whether the current user is admin, not the message sender
-  const isCurrentUserMessage = (isAdmin && (senderName === "mdzahid11@gmail.com" || senderName === "Customer Care")) || 
-                             (!isAdmin && senderName !== "mdzahid11@gmail.com" && senderName !== "Customer Care");
+  const isCurrentUserMessage = (isAdmin && (senderName === "mdziq962#@gmail.com" || senderName === "Customer Care")) || 
+                             (!isAdmin && senderName !== "mdziq962#@gmail.com" && senderName !== "Customer Care");
   
   const formattedTime = timestamp ? new Date(timestamp.toDate()).toLocaleString() : '';
   
@@ -256,7 +256,7 @@ const Message = ({ message, isAdmin }) => {
       </MessageBubble>
       {isCurrentUserMessage && (
         <MessageAvatar
-          alt={senderName === "mdzahid11@gmail.com" || senderName === "Customer Care" ? "Customer Care" : displayName}
+          alt={senderName === "mdziq962#@gmail.com" || senderName === "Customer Care" ? "Customer Care" : displayName}
           isAdmin={isAdmin}
         />
       )}
