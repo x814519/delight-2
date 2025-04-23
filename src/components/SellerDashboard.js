@@ -46,7 +46,8 @@ import {
   Switch,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  Pagination
 } from "@mui/material";
 import {
   Store as StoreIcon,
@@ -442,6 +443,12 @@ const SellerDashboard = ({ setIsSeller }) => {
     return savedCount !== null ? parseInt(savedCount, 10) : 1;
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage, setProductsPerPage] = useState(12);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   // Add new effect to fetch admin products when dialog opens
   useEffect(() => {
     if (isProductDialogOpen) {
@@ -543,26 +550,79 @@ const SellerDashboard = ({ setIsSeller }) => {
     }
   };
 
-  // Add the function to filter products based on search and price range
+  // Modified fetchSellerProducts to support pagination
+  const fetchSellerProducts = async (productIds, page = 1) => {
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+      setSellerProducts([]);
+      setTotalProducts(0);
+      return [];
+    }
+
+    try {
+      setIsLoadingMore(true);
+      
+      // Set total products count
+      setTotalProducts(productIds.length);
+      
+      // Calculate start and end indices for pagination
+      const startIndex = (page - 1) * productsPerPage;
+      const endIndex = Math.min(startIndex + productsPerPage, productIds.length);
+      
+      // Get the subset of product IDs for the current page
+      const pageProductIds = productIds.slice(startIndex, endIndex);
+      
+      // Use batched reads for the current page
+      const products = [];
+      const batchSize = 10;
+
+      for (let i = 0; i < pageProductIds.length; i += batchSize) {
+        const batch = pageProductIds.slice(i, i + batchSize);
+        const promises = batch.map((id) => getDoc(doc(db, "products", id)));
+
+        const results = await Promise.all(promises);
+
+        results.forEach((doc) => {
+          if (doc.exists()) {
+            products.push({
+              id: doc.id,
+              ...doc.data(),
+            });
+          }
+        });
+      }
+
+      // If it's the first page, replace products; otherwise append
+      if (page === 1) {
+        setSellerProducts(products);
+      } else {
+        setSellerProducts(prevProducts => [...prevProducts, ...products]);
+      }
+      
+      setIsLoadingMore(false);
+      return products;
+    } catch (error) {
+      console.error("Error fetching seller products:", error);
+      setSnackbar({
+        open: true,
+        message: "Error loading products. Please refresh the page.",
+        severity: "error",
+      });
+      setIsLoadingMore(false);
+      return [];
+    }
+  };
+
+  // Modified getFilteredProducts to not cause re-renders
   const getFilteredProducts = () => {
-    return adminProducts.filter((product) => {
-      // Filter out products that are already in the seller's inventory
-      const notInInventory = !sellerData?.products?.includes(product.id);
+    return sellerProducts.filter((product) => {
+      const nameMatch = product.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+      const descMatch = product.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+      const searchMatch = searchQuery === "" || nameMatch || descMatch;
       
-      // Filter by search query (name and description)
-      const nameMatch = product.name?.toLowerCase().includes(productSearchQuery.toLowerCase()) || false;
-      const descriptionMatch = product.description?.toLowerCase().includes(productSearchQuery.toLowerCase()) || false;
-      const searchMatch = productSearchQuery === "" || nameMatch || descriptionMatch;
+      const price = parseFloat(product.price);
+      const priceMatch = searchPrice === "" || (price && price <= parseFloat(searchPrice));
       
-      // Filter by price range
-      const minPrice = productPriceRange.min !== "" ? parseFloat(productPriceRange.min) : 0;
-      const maxPrice = productPriceRange.max !== "" ? parseFloat(productPriceRange.max) : Infinity;
-      
-      const priceMatch = 
-        (productPriceRange.min === "" || (product.price && product.price >= minPrice)) &&
-        (productPriceRange.max === "" || (product.price && product.price <= maxPrice));
-      
-      return notInInventory && searchMatch && priceMatch;
+      return searchMatch && priceMatch;
     });
   };
 
@@ -823,7 +883,9 @@ const SellerDashboard = ({ setIsSeller }) => {
 
           case "products":
             if (productsLoading && sellerData?.products) {
-              await fetchSellerProducts(sellerData.products);
+              // Reset to page 1 when tab is changed to products
+              setCurrentPage(1);
+              await fetchSellerProducts(sellerData.products, 1);
               await fetchAdminProducts();
               setProductsLoading(false);
             }
@@ -851,6 +913,22 @@ const SellerDashboard = ({ setIsSeller }) => {
 
     loadTabData();
   }, [activeTab, activeSubTab]);
+
+  // Handle page change
+  const handlePageChange = (event, newPage) => {
+    setCurrentPage(newPage);
+    if (sellerData?.products) {
+      fetchSellerProducts(sellerData.products, newPage);
+    }
+  };
+
+  // Replace the previous useEffect with this one
+  useEffect(() => {
+    if (sellerProducts.length > 0) {
+      const filtered = getFilteredProducts();
+      setFilteredProducts(filtered);
+    }
+  }, [sellerProducts, searchQuery, searchPrice]);
 
   // Update the fetchOrders function for better performance
   const fetchOrders = async () => {
@@ -929,48 +1007,6 @@ const SellerDashboard = ({ setIsSeller }) => {
         open: true,
         message: "Error loading orders. Please refresh the page.",
         severity: "error"
-      });
-      return [];
-    }
-  };
-
-  // Update the fetchSellerProducts for better performance
-  const fetchSellerProducts = async (productIds) => {
-    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
-      setSellerProducts([]);
-      return [];
-    }
-
-    try {
-      // Use batched reads to avoid too many individual document fetches
-      // Process in chunks of 10 products at a time
-      const products = [];
-      const batchSize = 10;
-
-      for (let i = 0; i < productIds.length; i += batchSize) {
-        const batch = productIds.slice(i, i + batchSize);
-        const promises = batch.map((id) => getDoc(doc(db, "products", id)));
-
-        const results = await Promise.all(promises);
-
-        results.forEach((doc) => {
-          if (doc.exists()) {
-            products.push({
-              id: doc.id,
-              ...doc.data(),
-            });
-          }
-        });
-      }
-
-      setSellerProducts(products);
-      return products;
-    } catch (error) {
-      console.error("Error fetching seller products:", error);
-      setSnackbar({
-        open: true,
-        message: "Error loading products. Please refresh the page.",
-        severity: "error",
       });
       return [];
     }
@@ -1833,110 +1869,115 @@ const SellerDashboard = ({ setIsSeller }) => {
       </Box>
       <Paper elevation={3} sx={{ p: 2, px: { xs: 1, sm: 2, md: 3 }, width: '100%', overflow: 'hidden' }}>
         {sellerProducts.length > 0 ? (
-          <Grid container spacing={{ xs: 1, sm: 2, md: 3 }}>
-            {filteredProducts.map((product) => (
-              <Grid item xs={6} sm={6} md={4} lg={3} key={product.id}>
-                <Card
-                  elevation={3}
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: (theme) => `0 8px 16px ${alpha(theme.palette.primary.main, 0.15)}`,
-                    },
-                    position: 'relative',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* Status indicator */}
-                  <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
-                    <Chip
-                      label={product.status || "Active"}
-                      color={
-                        product.status === "Inactive"
-                          ? "default"
-                          : product.status === "Pending"
-                            ? "warning"
-                            : "success"
-                      }
-                      size="small"
-                      sx={{ fontWeight: "medium" }}
-                    />
-                  </Box>
-                  
-                  {/* Product Image */}
-                  <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 }, display: 'flex', justifyContent: 'center' }}>
-                    <Box
-                      component="img"
-                      src={product.imageUrl}
-                      alt={product.name}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = process.env.PUBLIC_URL + "/images/product1.jpg";
-                      }}
-                      sx={{
-                        width: '100%',
-                        height: { xs: 120, sm: 150, md: 180 },
-                        objectFit: 'contain',
-                        borderRadius: 1,
-                        backgroundColor: '#f5f5f5',
-                      }}
-                      loading="lazy"
-                    />
-                  </Box>
-                  
-                  {/* Product Details */}
-                  <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 }, pt: 0, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    {/* Product Name */}
-                    <Typography variant="h6" component="h3" sx={{ mb: 1, fontWeight: 600 }}>
-                      {product.name}
-                    </Typography>
+          <>
+            <Grid container spacing={{ xs: 1, sm: 2, md: 3 }}>
+              {filteredProducts.map((product) => (
+                <Grid item xs={6} sm={6} md={4} lg={3} key={product.id}>
+                  <Card
+                    elevation={3}
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: (theme) => `0 8px 16px ${alpha(theme.palette.primary.main, 0.15)}`,
+                      },
+                      position: 'relative',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {/* Status indicator */}
+                    <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
+                      <Chip
+                        label={product.status || "Active"}
+                        color={
+                          product.status === "Inactive"
+                            ? "default"
+                            : product.status === "Pending"
+                              ? "warning"
+                              : "success"
+                        }
+                        size="small"
+                        sx={{ fontWeight: "medium" }}
+                      />
+                    </Box>
                     
-                    {/* Product Description - with text truncation */}
-                    {/* <Typography 
-                      variant="body2" 
-                      color="text.secondary" 
-                      sx={{ 
-                        mb: 2,
-                        flexGrow: 1,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: { xs: 2, sm: 3 },
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      {product.description}
-                    </Typography> */}
+                    {/* Product Image */}
+                    <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 }, display: 'flex', justifyContent: 'center' }}>
+                      <Box
+                        component="img"
+                        src={product.imageUrl}
+                        alt={product.name}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = process.env.PUBLIC_URL + "/images/product1.jpg";
+                        }}
+                        sx={{
+                          width: '100%',
+                          height: { xs: 120, sm: 150, md: 180 },
+                          objectFit: 'contain',
+                          borderRadius: 1,
+                          backgroundColor: '#f5f5f5',
+                        }}
+                        loading="lazy"
+                      />
+                    </Box>
                     
-                    {/* Price and Profit Information */}
-                    <Box sx={{ mt: 'auto' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
-                          ${Number(product.price).toFixed(2)}
-                        </Typography>
-                        
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: "medium",
-                            fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' },
-                            color: "success.main",
-                          }}
-                        >
-                          Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
-                        </Typography>
+                    {/* Product Details */}
+                    <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 }, pt: 0, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                      {/* Product Name */}
+                      <Typography variant="h6" component="h3" sx={{ mb: 1, fontWeight: 600 }}>
+                        {product.name}
+                      </Typography>
+                      
+                      {/* Price and Profit Information */}
+                      <Box sx={{ mt: 'auto' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
+                            ${Number(product.price).toFixed(2)}
+                          </Typography>
+                          
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: "medium",
+                              fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' },
+                              color: "success.main",
+                            }}
+                          >
+                            Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
+                          </Typography>
+                        </Box>
                       </Box>
                     </Box>
-                  </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+            
+            {/* Loading indicator */}
+            {isLoadingMore && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <CircularProgress />
+              </Box>
+            )}
+            
+            {/* Pagination controls */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <Pagination 
+                count={Math.ceil(totalProducts / productsPerPage)} 
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                variant="outlined"
+                shape="rounded"
+                size="large"
+              />
+            </Box>
+          </>
         ) : (
           <Box
             sx={{
@@ -2175,7 +2216,7 @@ const SellerDashboard = ({ setIsSeller }) => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>
-                          {/* {product.description} */}
+                          {product.description}
                         </Typography>
                         
                         {/* Price and Profit Information */}
@@ -2688,25 +2729,6 @@ const SellerDashboard = ({ setIsSeller }) => {
       console.error("Error fetching orders on mount:", error);
     });
   }, []); // Empty dependency array means this runs once on mount
-
-  useEffect(() => {
-    if (sellerProducts.length > 0) {
-      const filtered = sellerProducts.filter((product) => {
-        const nameMatch =
-          product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          !searchQuery;
-        const priceMatch =
-          searchPrice === "" ||
-          (searchPrice &&
-            product.price &&
-            Number(product.price) <= Number(searchPrice));
-        return nameMatch && priceMatch;
-      });
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts([]);
-    }
-  }, [sellerProducts, searchQuery, searchPrice]);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
