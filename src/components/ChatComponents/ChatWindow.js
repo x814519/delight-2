@@ -158,11 +158,55 @@ const ChatWindow = ({
   const theme = useTheme();
   const [sellerStatus, setSellerStatus] = useState(null);
   
-  // Load seller status from localStorage
+  // Load seller status from localStorage and listen for changes
   useEffect(() => {
     if (!isAdmin) {
       const status = localStorage.getItem('sellerStatus');
       setSellerStatus(status);
+      
+      // Set up a listener for changes to localStorage
+      const handleStorageChange = (e) => {
+        if (e.key === 'sellerStatus') {
+          setSellerStatus(e.newValue);
+        }
+      };
+      
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Periodically check seller status from Firestore
+      const checkSellerStatus = async () => {
+        try {
+          const sellerId = localStorage.getItem('sellerId');
+          if (!sellerId) return;
+          
+          const sellerRef = doc(db, 'sellers', sellerId);
+          const sellerDoc = await getDoc(sellerRef);
+          
+          if (sellerDoc.exists()) {
+            const firebaseStatus = sellerDoc.data().status;
+            
+            // If status has changed, update localStorage
+            if (firebaseStatus !== status) {
+              localStorage.setItem('sellerStatus', firebaseStatus);
+              setSellerStatus(firebaseStatus);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking seller status:', error);
+        }
+      };
+      
+      // Check status immediately
+      checkSellerStatus();
+      
+      // Set interval to check status periodically (every 60 seconds)
+      const intervalId = setInterval(checkSellerStatus, 60000);
+      
+      // Clean up event listener and interval
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(intervalId);
+      };
     }
   }, [isAdmin]);
   
@@ -499,7 +543,7 @@ const ChatWindow = ({
       </ChatHeader>
       
       {/* Add verification status notification for non-verified sellers */}
-      {!isAdmin && sellerStatus !== 'verified' && sellerStatus !== 'frozen' && (
+      {!isAdmin && sellerStatus === 'pending' && (
         <Box 
           sx={{
             p: 2,
@@ -512,7 +556,7 @@ const ChatWindow = ({
             display: { xs: 'block', sm: 'none' } // Only show on mobile
           }}
         >
-          Account is not verified. cotact your customer care.
+          Account is not verified. contact your customer care.
         </Box>
       )}
       
