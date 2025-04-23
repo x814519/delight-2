@@ -626,6 +626,29 @@ const SellerDashboard = ({ setIsSeller }) => {
     });
   };
 
+  // Add a separate function for filtering admin products in the dialog
+  const getFilteredAdminProducts = () => {
+    return adminProducts.filter((product) => {
+      // Filter out products that are already in the seller's inventory
+      const notInInventory = !sellerData?.products?.includes(product.id);
+      
+      // Filter by search query (name and description)
+      const nameMatch = product.name?.toLowerCase().includes(productSearchQuery.toLowerCase()) || false;
+      const descriptionMatch = product.description?.toLowerCase().includes(productSearchQuery.toLowerCase()) || false;
+      const searchMatch = productSearchQuery === "" || nameMatch || descriptionMatch;
+      
+      // Filter by price range
+      const minPrice = productPriceRange.min !== "" ? parseFloat(productPriceRange.min) : 0;
+      const maxPrice = productPriceRange.max !== "" ? parseFloat(productPriceRange.max) : Infinity;
+      
+      const priceMatch = 
+        (productPriceRange.min === "" || (product.price && product.price >= minPrice)) &&
+        (productPriceRange.max === "" || (product.price && product.price <= maxPrice));
+      
+      return notInInventory && searchMatch && priceMatch;
+    });
+  };
+
   // Update the handleProductSelection function
   const handleProductSelection = (productId) => {
     setSelectedProducts((prev) =>
@@ -1933,24 +1956,35 @@ const SellerDashboard = ({ setIsSeller }) => {
                         {product.name}
                       </Typography>
                       
+                      {/* Product Description */}
+                      <Typography variant="body2" color="text.secondary" sx={{
+                        mb: 1, 
+                        flexGrow: 1,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {product.description}
+                      </Typography>
+                      
                       {/* Price and Profit Information */}
-                      <Box sx={{ mt: 'auto' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
-                            ${Number(product.price).toFixed(2)}
-                          </Typography>
-                          
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: "medium",
-                              fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' },
-                              color: "success.main",
-                            }}
-                          >
-                            Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
-                          </Typography>
-                        </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
+                          ${Number(product.price).toFixed(2)}
+                        </Typography>
+                        
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: "medium",
+                            fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                            color: "success.main",
+                          }}
+                        >
+                          Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
+                        </Typography>
                       </Box>
                     </Box>
                   </Card>
@@ -2080,15 +2114,15 @@ const SellerDashboard = ({ setIsSeller }) => {
                 <Checkbox
                   indeterminate={
                     selectedProducts.length > 0 &&
-                    selectedProducts.length < getFilteredProducts().length
+                    selectedProducts.length < getFilteredAdminProducts().length
                   }
                   checked={
-                    selectedProducts.length === getFilteredProducts().length &&
-                    getFilteredProducts().length > 0
+                    selectedProducts.length === getFilteredAdminProducts().length &&
+                    getFilteredAdminProducts().length > 0
                   }
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedProducts(getFilteredProducts().map((p) => p.id));
+                      setSelectedProducts(getFilteredAdminProducts().map((p) => p.id));
                     } else {
                       setSelectedProducts([]);
                     }
@@ -2112,7 +2146,7 @@ const SellerDashboard = ({ setIsSeller }) => {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress size={40} />
             </Box>
-          ) : getFilteredProducts().length === 0 ? (
+          ) : getFilteredAdminProducts().length === 0 ? (
             <Box sx={{ textAlign: "center", p: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
               <Typography variant="body1" color="textSecondary" gutterBottom>
                 No products match your search criteria
@@ -2132,7 +2166,7 @@ const SellerDashboard = ({ setIsSeller }) => {
             </Box>
           ) : (
             <Grid container spacing={2}>
-              {getFilteredProducts().map((product) => {
+              {getFilteredAdminProducts().map((product) => {
                 const isSelected = selectedProducts.includes(product.id);
                 
                 return (
@@ -2206,12 +2240,10 @@ const SellerDashboard = ({ setIsSeller }) => {
                         
                         {/* Product Description */}
                         <Typography variant="body2" color="text.secondary" sx={{
-                          mt: -1.7, 
                           mb: 1, 
                           flexGrow: 1,
-                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' },
-                          display: { xs: '-webkit-box' },
-                          WebkitLineClamp: { xs: 2, sm: 3 },
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
@@ -2220,58 +2252,21 @@ const SellerDashboard = ({ setIsSeller }) => {
                         </Typography>
                         
                         {/* Price and Profit Information */}
-                        <Box sx={{ mt: 'auto' }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5 }}>
-                            <Typography variant="subtitle1" sx={{ 
-                              fontWeight: 'bold',
-                              fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' }
-                            }}>
-                              ${Number(product.price).toFixed(2)}
-                            </Typography>
-                            
-                            
-                          </Box>
-
-                          <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
+                            ${Number(product.price).toFixed(2)}
+                          </Typography>
+                          
                           <Typography
-                              variant="body2"
-                              sx={{
-                                mt: -1.2,
-                                fontWeight: "medium",
-                                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                                color:
-                                  product.price &&
-                                  product.cost &&
-                                  product.price > 0
-                                    ? (product.price - product.cost) / product.price >= 0.4
-                                      ? "success.main"
-                                      : (product.price - product.cost) / product.price >= 0.2
-                                        ? "info.main"
-                                        : (product.price - product.cost) / product.price >= 0.1
-                                          ? "warning.main"
-                                          : "error.main"
-                                    : "text.secondary",
-                              }}
-                            >
-                              Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
-                            </Typography>
-                          </Box>
-{/*                          
-
-
-
-                          <Typography
-                            variant="caption"
+                            variant="body2"
                             sx={{
-                              display: 'block',
-                              textAlign: 'right',
                               fontWeight: "medium",
-                              fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                              fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
                               color: "success.main",
                             }}
                           >
-                            23%: ${(Number(product.price || 0) * 0.23).toFixed(2)}
-                          </Typography> */}
+                            Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
+                          </Typography>
                         </Box>
                       </Box>
                     </Card>
@@ -5149,15 +5144,15 @@ const [toogle, setToogle] = useState(false)
                 <Checkbox
                   indeterminate={
                     selectedProducts.length > 0 &&
-                    selectedProducts.length < getFilteredProducts().length
+                    selectedProducts.length < getFilteredAdminProducts().length
                   }
                   checked={
-                    selectedProducts.length === getFilteredProducts().length &&
-                    getFilteredProducts().length > 0
+                    selectedProducts.length === getFilteredAdminProducts().length &&
+                    getFilteredAdminProducts().length > 0
                   }
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedProducts(getFilteredProducts().map((p) => p.id));
+                      setSelectedProducts(getFilteredAdminProducts().map((p) => p.id));
                     } else {
                       setSelectedProducts([]);
                     }
@@ -5181,7 +5176,7 @@ const [toogle, setToogle] = useState(false)
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress size={40} />
             </Box>
-          ) : getFilteredProducts().length === 0 ? (
+          ) : getFilteredAdminProducts().length === 0 ? (
             <Box sx={{ textAlign: "center", p: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
               <Typography variant="body1" color="textSecondary" gutterBottom>
                 No products match your search criteria
@@ -5201,7 +5196,7 @@ const [toogle, setToogle] = useState(false)
             </Box>
           ) : (
             <Grid container spacing={2}>
-              {getFilteredProducts().map((product) => {
+              {getFilteredAdminProducts().map((product) => {
                 const isSelected = selectedProducts.includes(product.id);
                 
                 return (
@@ -5273,13 +5268,12 @@ const [toogle, setToogle] = useState(false)
                           {product.name}
                         </Typography>
                         
-                        Product Description
-                        <Typography variant="body2" color="text.secondary" sx={{ 
+                        {/* Product Description */}
+                        <Typography variant="body2" color="text.secondary" sx={{
                           mb: 1, 
                           flexGrow: 1,
-                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' },
-                          display: { xs: '-webkit-box' },
-                          WebkitLineClamp: { xs: 2, sm: 3 },
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
@@ -5288,49 +5282,20 @@ const [toogle, setToogle] = useState(false)
                         </Typography>
                         
                         {/* Price and Profit Information */}
-                        <Box sx={{ mt: 'auto' }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5 }}>
-                            <Typography variant="subtitle1" sx={{ 
-                              fontWeight: 'bold',
-                              fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' }
-                            }}>
-                              ${Number(product.price).toFixed(2)}
-                            </Typography>
-                            
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: "medium",
-                                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                                color:
-                                  product.price &&
-                                  product.cost &&
-                                  product.price > 0
-                                    ? (product.price - product.cost) / product.price >= 0.4
-                                      ? "success.main"
-                                      : (product.price - product.cost) / product.price >= 0.2
-                                        ? "info.main"
-                                        : (product.price - product.cost) / product.price >= 0.1
-                                          ? "warning.main"
-                                          : "error.main"
-                                    : "text.secondary",
-                              }}
-                            >
-                              Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
-                            </Typography>
-                          </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
+                            ${Number(product.price).toFixed(2)}
+                          </Typography>
                           
                           <Typography
-                            variant="caption"
+                            variant="body2"
                             sx={{
-                              display: 'block',
-                              textAlign: 'right',
                               fontWeight: "medium",
-                              fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                              fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
                               color: "success.main",
                             }}
                           >
-                            23%: ${(Number(product.price || 0) * 0.23).toFixed(2)}
+                            Profit: ${(Number(product.price || 0) * 0.23).toFixed(2)}
                           </Typography>
                         </Box>
                       </Box>
@@ -5353,7 +5318,6 @@ const [toogle, setToogle] = useState(false)
             {/* Add {selectedProducts.length > 0 ? `Selected Products (${selectedProducts.length})` : 'Selected Products'} */}
 
             Add {selectedProducts.length > 0 ? ` (${selectedProducts.length})` : ''}
-
           </Button>
         </DialogActions>
       </Dialog>
