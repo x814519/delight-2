@@ -37,7 +37,7 @@ import {
   Lock as LockIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db, auth } from '../firebase';
+import { db, auth, refreshFirebaseAuthSession } from '../firebase';
 import { doc, getDoc, updateDoc, arrayUnion, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
@@ -53,10 +53,23 @@ const SellerOrderDetailsPage = () => {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-
-
+  // Function to refresh authentication state
+  const refreshAuthState = async () => {
+    try {
+      // Use the helper function from firebase.js
+      const refreshResult = await refreshFirebaseAuthSession();
+      console.log("Auth refresh result:", refreshResult);
+      return refreshResult;
+    } catch (error) {
+      console.error("Error refreshing auth state:", error);
+      return false;
+    }
+  };
 
   useEffect(() => {
+    // Refresh auth state when component loads
+    refreshAuthState();
+    
     const fetchOrderDetails = async () => {
       try {
         setLoading(true);
@@ -111,45 +124,76 @@ const SellerOrderDetailsPage = () => {
     try {
       setLoading(true);
       
-      // Get current user
+      // Try to refresh the session first if needed
+      await refreshAuthState();
+      
+      // Get current user - should be refreshed if needed
       const user = auth.currentUser;
       if (!user) {
         throw new Error("You must be logged in to pick an order");
       }
       
-      const email = user.email;
+      // Get seller ID from localStorage
+      const sellerId = localStorage.getItem('sellerId');
+      if (!sellerId) {
+        throw new Error("Seller ID not found");
+      }
       
-      // Create credential with email and password
-      const credential = EmailAuthProvider.credential(email, password);
-      
+      // Try Firebase Authentication first
       try {
-        // Reauthenticate the user
+        const email = user.email;
+        const credential = EmailAuthProvider.credential(email, password);
+        
+        // Attempt to reauthenticate with Firebase
         await reauthenticateWithCredential(user, credential);
         
-        // Close dialog and proceed with order pickup
+        // If successful, proceed with order pickup
         closePasswordDialog();
         await processOrderPickup();
       } catch (authError) {
         console.error("Authentication error:", authError);
         
-        // Check if the error is related to network issues
-        if (authError.code === 'auth/network-request-failed') {
-          setPasswordError("Network error. Please check your connection and try again.");
-        } else if (authError.code === 'auth/too-many-requests') {
-          setPasswordError("Too many attempts. Please try again later.");
-        } else if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
-          setPasswordError("Incorrect password. Please try again.");
-        } else {
-          // For other authentication errors, proceed with order pickup
-          // This is a workaround for Firebase authentication issues
-          console.log("Authentication error bypassed:", authError.code);
-          closePasswordDialog();
-          await processOrderPickup();
+        // On Firebase Auth error, try fallback to database password verification
+        try {
+          // Get seller data from Firestore
+          const sellerRef = doc(db, "sellers", sellerId);
+          const sellerDoc = await getDoc(sellerRef);
+          
+          if (!sellerDoc.exists()) {
+            throw new Error("Seller data not found");
+          }
+          
+          const sellerData = sellerDoc.data();
+          
+          // Check password against database stored password
+          if (password === sellerData.password || password === sellerData.plainPassword) {
+            // Password matches database record, proceed with order pickup
+            console.log("Password verified using database record");
+            closePasswordDialog();
+            await processOrderPickup();
+          } else {
+            // Password doesn't match database record
+            setPasswordError("Incorrect password. Please try again.");
+          }
+        } catch (dbError) {
+          console.error("Database verification error:", dbError);
+          
+          // If network errors are detected, give user the benefit of doubt
+          if (authError.code === 'auth/network-request-failed') {
+            setPasswordError("Network error. Please check your connection and try again.");
+          } else if (authError.code === 'auth/too-many-requests') {
+            setPasswordError("Too many attempts. Please try again later.");
+          } else if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
+            setPasswordError("Incorrect password. Please try again.");
+          } else {
+            // For other authentication errors, show generic error
+            setPasswordError("Authentication failed. Please try again.");
+          }
         }
       }
     } catch (error) {
       console.error("Error in password confirmation:", error);
-      setPasswordError("An error occurred. Please try again.");
+      setPasswordError(error.message || "An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -807,6 +851,16 @@ const SellerOrderDetailsPage = () => {
           {passwordError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {passwordError}
+              <Button 
+                size="small" 
+                sx={{ ml: 1 }} 
+                onClick={() => {
+                  setPasswordError('');
+                  setPassword('');
+                }}
+              >
+                Try Again
+              </Button>
             </Alert>
           )}
           <TextField
