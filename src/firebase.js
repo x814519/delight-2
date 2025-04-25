@@ -20,6 +20,64 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
+// Helper function to refresh Firebase auth session
+export const refreshFirebaseAuthSession = async () => {
+  try {
+    // Check if there's a stored seller ID and email
+    const sellerId = localStorage.getItem('sellerId');
+    const sellerEmail = localStorage.getItem('sellerEmail');
+    
+    if (!sellerId || !sellerEmail) {
+      console.log("No stored seller credentials found");
+      return false;
+    }
+    
+    // If Firebase auth is not synced with localStorage
+    if (!auth.currentUser || auth.currentUser.email !== sellerEmail) {
+      console.log("Firebase auth session needs refresh");
+      
+      try {
+        // Try to fetch seller data from Firestore
+        const sellerDoc = await getDoc(doc(db, 'sellers', sellerId));
+        
+        if (!sellerDoc.exists()) {
+          console.log("Seller document not found in Firestore");
+          return false;
+        }
+        
+        const sellerData = sellerDoc.data();
+        
+        // If we have password in localStorage or database
+        const plainPassword = sellerData.plainPassword || sellerData.password;
+        
+        if (plainPassword && sellerEmail) {
+          // Try to sign in again using stored credentials
+          try {
+            await signInWithEmailAndPassword(auth, sellerEmail, plainPassword);
+            console.log("Firebase auth session refreshed successfully");
+            return true;
+          } catch (signInError) {
+            console.error("Error refreshing auth session:", signInError);
+            // Silent failure, user will need to log in manually
+            return false;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching seller data:", error);
+        return false;
+      }
+    } else {
+      // Auth session is already valid
+      return true;
+    }
+  } catch (error) {
+    console.error("Error in refreshFirebaseAuthSession:", error);
+    return false;
+  }
+  
+  return false;
+};
+
 // Flag to track if admin creation has been attempted
 let adminCreationAttempted = false;
 
