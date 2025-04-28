@@ -111,7 +111,25 @@ const SellerOrderDetailsPage = () => {
   const openPasswordDialog = () => {
     setPassword('');
     setPasswordError('');
-    setPasswordDialogOpen(true);
+    
+    // Check if the user is logged in first
+    if (!auth.currentUser) {
+      // Try to refresh the session
+      refreshAuthState().then(result => {
+        if (result) {
+          // Session refreshed successfully, open dialog
+          setPasswordDialogOpen(true);
+        } else {
+          // Redirect to login
+          navigate('/seller/login', { 
+            state: { returnUrl: `/seller/order/${orderId}` } 
+          });
+        }
+      });
+    } else {
+      // User is logged in, open dialog normally
+      setPasswordDialogOpen(true);
+    }
   };
 
   const closePasswordDialog = () => {
@@ -130,7 +148,8 @@ const SellerOrderDetailsPage = () => {
       // Get current user - should be refreshed if needed
       const user = auth.currentUser;
       if (!user) {
-        throw new Error("You must be logged in to pick an order");
+        setPasswordError("You must be logged in to pick an order");
+        return;
       }
       
       // Get seller ID from localStorage
@@ -851,16 +870,50 @@ const SellerOrderDetailsPage = () => {
           {passwordError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {passwordError}
-              <Button 
-                size="small" 
-                sx={{ ml: 1 }} 
-                onClick={() => {
-                  setPasswordError('');
-                  setPassword('');
-                }}
-              >
-                Try Again
-              </Button>
+              {passwordError === "You must be logged in to pick an order" ? (
+                <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                  <Button 
+                    size="small" 
+                    variant="outlined"
+                    onClick={() => {
+                      // Refresh auth and try again
+                      refreshAuthState().then(result => {
+                        if (result) {
+                          setPasswordError('');
+                        } else {
+                          setPasswordError('');
+                        }
+                      });
+                    }}
+                  >
+                    TRY AGAIN
+                  </Button>
+                  <Button 
+                    size="small" 
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      closePasswordDialog();
+                      navigate('/seller/login', { 
+                        state: { returnUrl: `/seller/order/${orderId}` } 
+                      });
+                    }}
+                  >
+                    LOGIN
+                  </Button>
+                </Box>
+              ) : (
+                <Button 
+                  size="small" 
+                  sx={{ ml: 1 }} 
+                  onClick={() => {
+                    setPasswordError('');
+                    setPassword('');
+                  }}
+                >
+                  TRY AGAIN
+                </Button>
+              )}
             </Alert>
           )}
           <TextField
