@@ -1147,12 +1147,20 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      await Promise.all([
-        fetchPendingSellers(),
-        fetchStats()
-      ]);
+      // Fetch pending sellers
+      await fetchPendingSellers();
+      
+      // Fetch statistics using the improved fetchStats function
+      await fetchStats();
+      
+      // Rest of the function can stay as is
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error loading dashboard data',
+        severity: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -1194,8 +1202,27 @@ const AdminDashboard = () => {
       let totalRevenue = 0;
       ordersSnapshot.forEach((doc) => {
         const orderData = doc.data();
-        if (orderData.total) {
-          totalRevenue += parseFloat(orderData.total);
+        
+        // Only count revenue from completed or processing orders
+        if (orderData.status === 'completed' || orderData.status === 'processing' || orderData.status === 'picked') {
+          // Try to get the total amount from various fields that might contain it
+          if (orderData.total) {
+            totalRevenue += parseFloat(orderData.total);
+          } else if (orderData.totalAmount) {
+            totalRevenue += parseFloat(orderData.totalAmount);
+          } else if (orderData.pendingAdded) {
+            // As a fallback, use the pending added amount
+            totalRevenue += parseFloat(orderData.pendingAdded);
+          } else if (orderData.items && Array.isArray(orderData.items)) {
+            // If we have order items, calculate from them
+            let orderTotal = 0;
+            orderData.items.forEach(item => {
+              const itemPrice = parseFloat(item.price || 0);
+              const itemQuantity = parseInt(item.quantity || 1);
+              orderTotal += itemPrice * itemQuantity;
+            });
+            totalRevenue += orderTotal;
+          }
         }
       });
 
@@ -2193,7 +2220,7 @@ const AdminDashboard = () => {
           <Grid item xs={12} sm={6} md={3}>
             <DashboardCard
               title="Total Revenue"
-              value={`$${stats.totalRevenue}`}
+              value={`$${Number(stats.totalRevenue).toFixed(2)}`}
               icon={<MoneyIcon />}
               color="#4caf50"
               onClick={() => handleTabChange('revenue')}
@@ -2678,9 +2705,9 @@ const AdminDashboard = () => {
             <Grid item xs={12} sm={6} md={3}>
               <DashboardCard 
                 title="Total Revenue" 
-                value={`$${stats.totalRevenue}`} 
+                value={`$${Number(stats.totalRevenue).toFixed(2)}`}
                 icon={<MoneyIcon fontSize="large" />} 
-                color="#9C27B0"
+                color="#4CAF50"
               />
             </Grid>
           </Grid>
