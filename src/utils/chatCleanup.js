@@ -11,17 +11,17 @@ import {
 } from 'firebase/firestore';
 
 /**
- * Deletes seller chat messages that are older than 24 hours
+ * Deletes seller chat messages that are older than 60 hours
  * This function can be called periodically to clean up old messages
  */
 export const cleanupOldChatMessages = async () => {
   try {
     console.log('Starting seller chat messages cleanup...');
     
-    // Calculate timestamp for 24 hours ago
-    const twentyFourHoursAgo = new Date();
-    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-    const cutoffTimestamp = Timestamp.fromDate(twentyFourHoursAgo);
+    // Calculate timestamp for 60 hours ago
+    const sixtyHoursAgo = new Date();
+    sixtyHoursAgo.setHours(sixtyHoursAgo.getHours() - 60);
+    const cutoffTimestamp = Timestamp.fromDate(sixtyHoursAgo);
     
     // Get all chats
     const chatsRef = collection(db, 'chats');
@@ -34,7 +34,7 @@ export const cleanupOldChatMessages = async () => {
       const chatId = chatDoc.id;
       const messagesRef = collection(db, 'chats', chatId, 'messages');
       
-      // Query for messages older than 24 hours
+      // Query for messages older than 60 hours
       const oldMessagesQuery = query(
         messagesRef,
         where('timestamp', '<', cutoffTimestamp)
