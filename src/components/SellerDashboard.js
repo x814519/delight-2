@@ -776,10 +776,12 @@ const SellerDashboard = ({ setIsSeller }) => {
             const parsedData = JSON.parse(cachedSellerData);
             setSellerData({
               ...parsedData,
+              id: sellerId,
               walletBalance: parsedData.walletBalance || 0,
               pendingAmount: parsedData.pendingAmount || 0,
               productsCount: parsedData.products ? parsedData.products.length : 0,
-              ordersCount: 0
+              ordersCount: 0,
+              totalSales: parsedData.totalSales || 0  // Ensure totalSales is initialized
             });
             
             // Check if seller is frozen or pending and redirect to conversations tab
@@ -812,10 +814,12 @@ const SellerDashboard = ({ setIsSeller }) => {
             // Set seller data in state
             setSellerData({
               ...data,
+              id: sellerId,
               walletBalance: data.walletBalance || 0,
               pendingAmount: data.pendingAmount || 0,
               productsCount: data.products ? data.products.length : 0,
-              ordersCount: 0
+              ordersCount: 0,
+              totalSales: data.totalSales || 0  // Ensure totalSales is initialized
             });
             
             // If seller is frozen or pending, force the conversations tab
@@ -970,16 +974,31 @@ const SellerDashboard = ({ setIsSeller }) => {
       const ordersSnapshot = await getDocs(ordersQuery);
       const ordersData = [];
       let unpickedCount = 0;
+      let totalSales = 0;  // Initialize total sales counter
+      let pendingOrders = 0;
       
       ordersSnapshot.forEach((doc) => {
         const orderData = doc.data();
+        
+        // Add the order to our array
         ordersData.push({
           id: doc.id,
           ...orderData,
         });
+        
         // Count orders with "pending" status (unpicked orders)
         if (orderData.status === "pending") {
           unpickedCount++;
+          pendingOrders++;
+        }
+        
+        // Count all order totals for completed or processing orders
+        if (orderData.status === "completed" || orderData.status === "processing" || orderData.status === "picked") {
+          if (orderData.total) {
+            totalSales += Number(orderData.total);
+          } else if (orderData.totalAmount) {
+            totalSales += Number(orderData.totalAmount);
+          }
         }
       });
 
@@ -993,33 +1012,20 @@ const SellerDashboard = ({ setIsSeller }) => {
         return dateB - dateA; // Sort in descending order (newest first)
       });
 
-      // Limit to most recent 100 orders after sorting
+      // Limit to most recent 100 orders after sorting (for display only)
       const limitedOrdersData = ordersData.slice(0, 100);
 
       // Update state with the orders
       setSellerOrders(limitedOrdersData);
 
-      // Calculate order statistics
-      let totalSales = 0;
-      let pendingOrders = 0;
-
-      limitedOrdersData.forEach((order) => {
-        if (order.status === "pending") {
-          pendingOrders++;
-        }
-        if (order.total) {
-          totalSales += Number(order.total);
-        }
-      });
-
-      // Update seller data with order statistics
+      // Update seller data with order statistics - use all orders for sales calculations
       setSellerData((prevData) => {
         if (!prevData) return null;
         return {
           ...prevData,
-          ordersCount: limitedOrdersData.length,
+          ordersCount: ordersData.length, // Use total orders count, not limited
           pendingOrders,
-          totalSales,
+          totalSales, // Use totalSales calculated from all orders
         };
       });
 
