@@ -113,7 +113,7 @@ const Chat = ({ isAdmin, onMessageSent }) => {
   useEffect(() => {
     // Only initialize the worker once, preferably if the user is an admin or seller
     if (currentUserUid) {
-      console.log('Initializing chat cleanup worker for 24-hour message retention policy');
+      console.log('Initializing chat cleanup worker for 60-hour message retention policy');
       initializeChatCleanupWorker();
     }
     
