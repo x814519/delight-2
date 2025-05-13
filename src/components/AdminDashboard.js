@@ -1,118 +1,77 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Container, 
-  Typography, 
-  Grid, 
-  Paper, 
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Badge,
-  ListItemButton,
-  styled,
-  useTheme,
-  Card,
-  CardContent,
-  CardHeader,
-  CardActions,
-  CardMedia,
-  Avatar,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  alpha,
-  Tooltip,
-  Zoom,
-  useMediaQuery,
-  LinearProgress,
-  Fade,
-  ButtonBase,
-  CssBaseline,
-  Stack,
-  InputAdornment,
-  FormHelperText,
-  TablePagination,
-  Alert,
-  Snackbar,
-  Link,
-  Fab,
-  ListItemSecondaryAction,
-  Menu
+import { useNavigate } from 'react-router-dom';
+import { styled, useTheme, alpha } from '@mui/material/styles';
+import {
+  Box, Typography, Paper, Grid, Button, Drawer, List, ListItem,
+  ListItemIcon, ListItemText, Divider, AppBar, Toolbar, IconButton,
+  Badge, CssBaseline, Avatar, Tabs, Tab, CircularProgress, TextField,
+  Container, Card, CardContent, CardMedia, Alert, AlertTitle, Snackbar,
+  Menu, MenuItem, Tooltip, InputAdornment, TableContainer, Table, TableHead,
+  TableBody, TableRow, TableCell, TablePagination, Dialog, DialogActions,
+  DialogContent, DialogContentText, DialogTitle, FormControl, InputLabel, Select,
+  OutlinedInput, Chip, Modal, Backdrop, Fade, FormControlLabel, Switch, ListItemButton, 
+  Step, StepLabel, Stepper, Collapse, LinearProgress, FormGroup, Checkbox,
+  CardHeader, CardActions, Stack, Link, Fab
 } from '@mui/material';
-import { 
-  People as PeopleIcon,
-  Store as StoreIcon,
-  ShoppingCart as OrderIcon,
-  AttachMoney as MoneyIcon,
+import {
+  Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon,
   Dashboard as DashboardIcon,
-  Inventory as ProductsIcon,
-  Warehouse as StorehouseIcon,
-  LocalShipping as PackageIcon,
-  Share as SpreadIcon,
-  Group as AffiliateIcon,
-  AccountBalance as WithdrawIcon,
-  Chat as ConversationsIcon,
+  People as PeopleIcon,
+  ShoppingBag as ShoppingBagIcon,
   Settings as SettingsIcon,
-  AssignmentReturn as RefundIcon,
-  KeyboardArrowRight as ArrowRightIcon,
-  Home as HomeIcon,
-  Refresh as RefreshIcon,
-  ArrowBack as ArrowBackIcon,
-  ShoppingBag as SellersProductsIcon,
-  Person as ProfileIcon,
-  Edit as EditIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  TrendingUp as TrendingUpIcon,
-  BarChart as BarChartIcon,
+  ExitToApp as ExitToAppIcon,
+  Notifications as NotificationsIcon,
+  AccountCircle as AccountCircleIcon,
   Add as AddIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Info as InfoIcon,
-  MoreVert as MoreVertIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  Payment as PaymentIcon,
-  AccountBalance as AccountBalanceIcon,
-  CurrencyBitcoin as CurrencyBitcoinIcon,
-  Block as BlockIcon,
-  Save as SaveIcon,
-  LocalShipping as LocalShippingIcon,
-  Visibility as VisibilityIcon,
-  AccountBalanceWallet as AccountBalanceWalletIcon,
+  MonetizationOn as MoneyIcon,
+  ShoppingBasket as OrderIcon,
+  Person as PersonIcon,
+  Person as ProfileIcon,
+  Store as StoreIcon,
+  Category as CategoryIcon,
+  PowerSettingsNew as LogoutIcon,
+  ExpandMore as ExpandMoreIcon,
+  FilterList as FilterListIcon,
+  Edit as EditIcon,
   Delete as DeleteIcon,
-  AssignmentInd as AssignmentIndIcon,
-  InfoOutlined as InfoOutlinedIcon,
+  Refresh as RefreshIcon,
   Search as SearchIcon,
+  Check as CheckIcon,
+  Clear as ClearIcon,
   Close as CloseIcon,
+  ChatBubble as ChatBubbleIcon,
+  AttachMoney as AttachMoneyIcon,
+  Create as CreateIcon,
+  Cancel as CancelIcon,
+  Save as SaveIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowBack as ArrowBackIcon,
+  Send as SendIcon,
+  Message as MessageIcon,
+  MoreVert as MoreVertIcon,
+  Assignment as AssignmentIcon,
+  AssignmentInd as AssignmentIndIcon,
+  DeleteSweep as DeleteSweepIcon,
+  ShoppingCart as ShoppingCartIcon,
   AddShoppingCart as AddShoppingCartIcon,
   Remove as RemoveIcon,
   ShoppingCartCheckout as ShoppingCartCheckoutIcon,
-  DeleteSweep as DeleteSweepIcon,
-  ShoppingCart as ShoppingCartIcon,
+  Block as BlockIcon,
+  Visibility as VisibilityIcon,
+  Inventory as ProductsIcon,
+  ShoppingBag as SellersProductsIcon,
+  Warehouse as StorehouseIcon,
+  LocalShipping as LocalShippingIcon,
+  Home as HomeIcon,
+  CheckCircle as CheckCircleIcon,
+  Chat as ConversationsIcon,
+  AccountBalance,
+  CurrencyBitcoin as CurrencyBitcoinIcon
 } from '@mui/icons-material';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, setDoc, addDoc, orderBy, onSnapshot, serverTimestamp, getDoc, arrayUnion, arrayRemove, increment, documentId } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
 import { Chat } from './ChatComponents';
 import StatusUpdateModal from './StatusUpdateModal';
 import WithdrawalRequestsManager from './WithdrawalRequestsManager';
@@ -897,6 +856,338 @@ const ProductModal = ({ open, onClose, product, onSave }) => {
   );
 };
 
+// Add this component after the OrderDetailsModal but before the AdminDashboard component
+
+// SellerDetailsModal component to display seller registration information
+const SellerDetailsModal = ({ open, seller, onClose }) => {
+  if (!seller) return null;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle>
+        Seller Registration Details
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <ClearIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle1" fontWeight="bold">Shop Name</Typography>
+            <Typography variant="body1" paragraph>{seller.shopName || 'N/A'}</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle1" fontWeight="bold">Seller Name</Typography>
+            <Typography variant="body1" paragraph>{seller.name || 'N/A'}</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle1" fontWeight="bold">Email</Typography>
+            <Typography variant="body1" paragraph>{seller.email || 'N/A'}</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle1" fontWeight="bold">Phone</Typography>
+            <Typography variant="body1" paragraph>{seller.phone || 'N/A'}</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle1" fontWeight="bold">Registration Date</Typography>
+            <Typography variant="body1" paragraph>
+              {seller.createdAt ? new Date(seller.createdAt).toLocaleDateString() : 'N/A'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle1" fontWeight="bold">Status</Typography>
+            <Chip 
+              label={seller.status || 'N/A'} 
+              color={
+                seller.status === 'approved' ? 'success' : 
+                seller.status === 'pending' ? 'warning' : 
+                seller.status === 'rejected' ? 'error' : 'default'
+              }
+            />
+          </Grid>
+          
+          {seller.address && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight="bold">Address</Typography>
+              <Typography variant="body1" paragraph>{seller.address}</Typography>
+            </Grid>
+          )}
+          
+          {seller.description && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight="bold">Description</Typography>
+              <Typography variant="body1" paragraph>{seller.description}</Typography>
+            </Grid>
+          )}
+          
+          {seller.businessType && (
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" fontWeight="bold">Business Type</Typography>
+              <Typography variant="body1" paragraph>{seller.businessType}</Typography>
+            </Grid>
+          )}
+          
+          {seller.taxId && (
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" fontWeight="bold">Tax ID</Typography>
+              <Typography variant="body1" paragraph>{seller.taxId}</Typography>
+            </Grid>
+          )}
+          
+          {/* ID Proof Images Section */}
+          {seller.idProof && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {typeof seller.idProof === 'string' ? (
+                  <Box 
+                    component="img"
+                    src={seller.idProof}
+                    alt="ID Proof"
+                    sx={{ 
+                      width: 240, 
+                      height: 180, 
+                      objectFit: 'cover', 
+                      border: '1px solid #ddd',
+                      borderRadius: 1,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => window.open(seller.idProof, '_blank')}
+                  />
+                ) : Array.isArray(seller.idProof) ? (
+                  seller.idProof.map((image, index) => (
+                    <Box 
+                      key={index}
+                      component="img"
+                      src={image}
+                      alt={`ID Proof ${index + 1}`}
+                      sx={{ 
+                        width: 240, 
+                        height: 180, 
+                        objectFit: 'cover', 
+                        border: '1px solid #ddd',
+                        borderRadius: 1,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => window.open(image, '_blank')}
+                    />
+                  ))
+                ) : null}
+              </Box>
+            </Grid>
+          )}
+          
+          {/* Alternative field names for ID proof images */}
+          {!seller.idProof && (seller.idProofImages || seller.documents || seller.idProofFiles || seller.identityDocuments) && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {(() => {
+                  const proofImages = seller.idProofImages || seller.documents || seller.idProofFiles || seller.identityDocuments;
+                  
+                  if (typeof proofImages === 'string') {
+                    return (
+                      <Box 
+                        component="img"
+                        src={proofImages}
+                        alt="ID Proof"
+                        sx={{ 
+                          width: 240, 
+                          height: 180, 
+                          objectFit: 'cover', 
+                          border: '1px solid #ddd',
+                          borderRadius: 1,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(proofImages, '_blank')}
+                      />
+                    );
+                  } else if (Array.isArray(proofImages)) {
+                    return proofImages.map((image, index) => (
+                      <Box 
+                        key={index}
+                        component="img"
+                        src={image}
+                        alt={`ID Proof ${index + 1}`}
+                        sx={{ 
+                          width: 240, 
+                          height: 180, 
+                          objectFit: 'cover', 
+                          border: '1px solid #ddd',
+                          borderRadius: 1,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(image, '_blank')}
+                      />
+                    ));
+                  } else if (typeof proofImages === 'object') {
+                    // Handle case where it's an object with URLs
+                    return Object.values(proofImages).map((image, index) => {
+                      if (typeof image === 'string') {
+                        return (
+                          <Box 
+                            key={index}
+                            component="img"
+                            src={image}
+                            alt={`ID Proof ${index + 1}`}
+                            sx={{ 
+                              width: 240, 
+                              height: 180, 
+                              objectFit: 'cover', 
+                              border: '1px solid #ddd',
+                              borderRadius: 1,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(image, '_blank')}
+                          />
+                        );
+                      }
+                      return null;
+                    }).filter(item => item !== null);
+                  }
+                  
+                  return null;
+                })()}
+              </Box>
+            </Grid>
+          )}
+          
+          {/* Handle object format with front/back, frontImage/backImage structure */}
+          {!seller.idProof && 
+           !seller.idProofImages && 
+           !seller.documents && 
+           !seller.idProofFiles && 
+           !seller.identityDocuments && 
+           seller.verification && 
+           seller.verification.documents && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {Object.entries(seller.verification.documents).map(([key, value], index) => {
+                  if (typeof value === 'string') {
+                    return (
+                      <Box 
+                        key={index}
+                        component="img"
+                        src={value}
+                        alt={`ID Proof ${key}`}
+                        sx={{ 
+                          width: 240, 
+                          height: 180, 
+                          objectFit: 'cover', 
+                          border: '1px solid #ddd',
+                          borderRadius: 1,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(value, '_blank')}
+                      />
+                    );
+                  }
+                  return null;
+                })}
+              </Box>
+            </Grid>
+          )}
+          
+          {/* Handle plain object structure with frontImage/backImage properties */}
+          {!seller.idProof && 
+           !seller.idProofImages && 
+           !seller.documents && 
+           !seller.idProofFiles && 
+           !seller.identityDocuments && 
+           typeof seller.frontImage === 'string' && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                <Box 
+                  component="img"
+                  src={seller.frontImage}
+                  alt="ID Proof Front"
+                  sx={{ 
+                    width: 240, 
+                    height: 180, 
+                    objectFit: 'cover', 
+                    border: '1px solid #ddd',
+                    borderRadius: 1,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => window.open(seller.frontImage, '_blank')}
+                />
+                {seller.backImage && (
+                  <Box 
+                    component="img"
+                    src={seller.backImage}
+                    alt="ID Proof Back"
+                    sx={{ 
+                      width: 240, 
+                      height: 180, 
+                      objectFit: 'cover', 
+                      border: '1px solid #ddd',
+                      borderRadius: 1,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => window.open(seller.backImage, '_blank')}
+                  />
+                )}
+              </Box>
+            </Grid>
+          )}
+          
+          {/* For when idProof is an object with front/back properties */}
+          {seller.idProof && typeof seller.idProof === 'object' && !Array.isArray(seller.idProof) && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {Object.entries(seller.idProof).map(([key, value], index) => {
+                  if (typeof value === 'string') {
+                    return (
+                      <Box 
+                        key={index}
+                        component="img"
+                        src={value}
+                        alt={`ID Proof ${key}`}
+                        sx={{ 
+                          width: 240, 
+                          height: 180, 
+                          objectFit: 'cover', 
+                          border: '1px solid #ddd',
+                          borderRadius: 1,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(value, '_blank')}
+                      />
+                    );
+                  }
+                  return null;
+                })}
+              </Box>
+            </Grid>
+          )}
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -923,6 +1214,9 @@ const AdminDashboard = () => {
   const [selectedSellerId, setSelectedSellerId] = useState('');
   const [isSellerEditModalOpen, setIsSellerEditModalOpen] = useState(false);
   const [isViewingSellers, setIsViewingSellers] = useState(false);
+  // Add state for seller details modal
+  const [selectedSellerDetails, setSelectedSellerDetails] = useState(null);
+  const [isSellerDetailsModalOpen, setIsSellerDetailsModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
@@ -2305,6 +2599,20 @@ const AdminDashboard = () => {
                             Reject
                           </StyledButton>
                         </Tooltip>
+                        <Tooltip title="View Seller Details">
+                          <StyledButton
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            onClick={() => {
+                              setSelectedSellerDetails(seller);
+                              setIsSellerDetailsModalOpen(true);
+                            }}
+                            startIcon={<VisibilityIcon />}
+                          >
+                            View
+                          </StyledButton>
+                        </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
@@ -2789,6 +3097,20 @@ const AdminDashboard = () => {
                           >
                             Reject
                           </Button>
+                          <Tooltip title="View Seller Details">
+                            <StyledButton
+                              variant="outlined"
+                              color="primary"
+                              size="small"
+                              onClick={() => {
+                                setSelectedSellerDetails(seller);
+                                setIsSellerDetailsModalOpen(true);
+                              }}
+                              startIcon={<VisibilityIcon />}
+                            >
+                              View
+                            </StyledButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))
@@ -5450,7 +5772,7 @@ const AdminDashboard = () => {
                 }}
               >
                 <ListItemIcon>
-                  <WithdrawIcon color={activeTab === 'withdraw' ? 'primary' : 'inherit'} />
+                  <AccountBalance color={activeTab === 'withdraw' ? 'primary' : 'inherit'} />
                 </ListItemIcon>
                 <ListItemText primary="Money Withdraw" />
               </ListItemButton>
@@ -5743,7 +6065,7 @@ const AdminDashboard = () => {
                       <Grid item xs={12}>
                         <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <AccountBalanceIcon sx={{ mr: 1, color: 'primary.main' }} />
+                            <AccountBalance sx={{ mr: 1, color: 'primary.main' }} />
                             <Typography variant="subtitle2">Bank Details</Typography>
                           </Box>
                           <Grid container spacing={1}>
@@ -5836,67 +6158,230 @@ const AdminDashboard = () => {
               {selectedSeller.documentType && selectedSeller.idProof && (
                 <Grid item xs={12}>
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                      ID Proof ({selectedSeller.documentType})
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <Box>
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
-                            Front Side
-                          </Typography>
-                          {selectedSeller.idProof.frontImage ? (
-                            <Box
-                              component="img"
-                              src={selectedSeller.idProof.frontImage}
-                              alt="ID Front"
-                              sx={{
-                                width: '100%',
-                                maxHeight: 200,
-                                objectFit: 'contain',
-                                border: 1,
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                cursor: 'pointer'
-                              }}
-                              onClick={() => window.open(selectedSeller.idProof.frontImage, '_blank')}
-                            />
-                          ) : (
-                            <Typography variant="body2" color="error">
-                              Front image not available
-                            </Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Box>
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
-                            Back Side
-                          </Typography>
-                          {selectedSeller.idProof.backImage ? (
-                            <Box
-                              component="img"
-                              src={selectedSeller.idProof.backImage}
-                              alt="ID Back"
-                              sx={{
-                                width: '100%',
-                                maxHeight: 200,
-                                objectFit: 'contain',
-                                border: 1,
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                cursor: 'pointer'
-                              }}
-                              onClick={() => window.open(selectedSeller.idProof.backImage, '_blank')}
-                            />
-                          ) : (
-                            <Typography variant="body2" color="error">
-                              Back image not available
-                            </Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                    </Grid>
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                      {typeof selectedSeller.idProof === 'string' ? (
+                        <Box 
+                          component="img"
+                          src={selectedSeller.idProof}
+                          alt="ID Proof"
+                          sx={{ 
+                            width: 240, 
+                            height: 180, 
+                            objectFit: 'cover', 
+                            border: '1px solid #ddd',
+                            borderRadius: 1,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => window.open(selectedSeller.idProof, '_blank')}
+                        />
+                      ) : Array.isArray(selectedSeller.idProof) ? (
+                        selectedSeller.idProof.map((image, index) => (
+                          <Box 
+                            key={index}
+                            component="img"
+                            src={image}
+                            alt={`ID Proof ${index + 1}`}
+                            sx={{ 
+                              width: 240, 
+                              height: 180, 
+                              objectFit: 'cover', 
+                              border: '1px solid #ddd',
+                              borderRadius: 1,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(image, '_blank')}
+                          />
+                        ))
+                      ) : null}
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+              
+              {/* Alternative field names for ID proof images */}
+              {!selectedSeller.idProof && (selectedSeller.idProofImages || selectedSeller.documents || selectedSeller.idProofFiles || selectedSeller.identityDocuments) && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                    {(() => {
+                      const proofImages = selectedSeller.idProofImages || selectedSeller.documents || selectedSeller.idProofFiles || selectedSeller.identityDocuments;
+                      
+                      if (typeof proofImages === 'string') {
+                        return (
+                          <Box 
+                            component="img"
+                            src={proofImages}
+                            alt="ID Proof"
+                            sx={{ 
+                              width: 240, 
+                              height: 180, 
+                              objectFit: 'cover', 
+                              border: '1px solid #ddd',
+                              borderRadius: 1,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(proofImages, '_blank')}
+                          />
+                        );
+                      } else if (Array.isArray(proofImages)) {
+                        return proofImages.map((image, index) => (
+                          <Box 
+                            key={index}
+                            component="img"
+                            src={image}
+                            alt={`ID Proof ${index + 1}`}
+                            sx={{ 
+                              width: 240, 
+                              height: 180, 
+                              objectFit: 'cover', 
+                              border: '1px solid #ddd',
+                              borderRadius: 1,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(image, '_blank')}
+                          />
+                        ));
+                      } else if (typeof proofImages === 'object') {
+                        // Handle case where it's an object with URLs
+                        return Object.values(proofImages).map((image, index) => {
+                          if (typeof image === 'string') {
+                            return (
+                              <Box 
+                                key={index}
+                                component="img"
+                                src={image}
+                                alt={`ID Proof ${index + 1}`}
+                                sx={{ 
+                                  width: 240, 
+                                  height: 180, 
+                                  objectFit: 'cover', 
+                                  border: '1px solid #ddd',
+                                  borderRadius: 1,
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => window.open(image, '_blank')}
+                              />
+                            );
+                          }
+                          return null;
+                        }).filter(item => item !== null);
+                      }
+                      
+                      return null;
+                    })()}
+                  </Box>
+                </Grid>
+              )}
+              
+              {/* Handle object format with front/back, frontImage/backImage structure */}
+              {!selectedSeller.idProof && 
+               !selectedSeller.idProofImages && 
+               !selectedSeller.documents && 
+               !selectedSeller.idProofFiles && 
+               !selectedSeller.identityDocuments && 
+               selectedSeller.verification && 
+               selectedSeller.verification.documents && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                    {Object.entries(selectedSeller.verification.documents).map(([key, value], index) => {
+                      if (typeof value === 'string') {
+                        return (
+                          <Box 
+                            key={index}
+                            component="img"
+                            src={value}
+                            alt={`ID Proof ${key}`}
+                            sx={{ 
+                              width: 240, 
+                              height: 180, 
+                              objectFit: 'cover', 
+                              border: '1px solid #ddd',
+                              borderRadius: 1,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(value, '_blank')}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
+                  </Box>
+                </Grid>
+              )}
+              
+              {/* Handle plain object structure with frontImage/backImage properties */}
+              {!selectedSeller.idProof && 
+               !selectedSeller.idProofImages && 
+               !selectedSeller.documents && 
+               !selectedSeller.idProofFiles && 
+               !selectedSeller.identityDocuments && 
+               typeof selectedSeller.frontImage === 'string' && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                    <Box 
+                      component="img"
+                      src={selectedSeller.frontImage}
+                      alt="ID Proof Front"
+                      sx={{ 
+                        width: 240, 
+                        height: 180, 
+                        objectFit: 'cover', 
+                        border: '1px solid #ddd',
+                        borderRadius: 1,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => window.open(selectedSeller.frontImage, '_blank')}
+                    />
+                    {selectedSeller.backImage && (
+                      <Box 
+                        component="img"
+                        src={selectedSeller.backImage}
+                        alt="ID Proof Back"
+                        sx={{ 
+                          width: 240, 
+                          height: 180, 
+                          objectFit: 'cover', 
+                          border: '1px solid #ddd',
+                          borderRadius: 1,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(selectedSeller.backImage, '_blank')}
+                      />
+                    )}
+                  </Box>
+                </Grid>
+              )}
+              
+              {/* For when idProof is an object with front/back properties */}
+              {selectedSeller.idProof && typeof selectedSeller.idProof === 'object' && !Array.isArray(selectedSeller.idProof) && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>ID Proof Images</Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                    {Object.entries(selectedSeller.idProof).map(([key, value], index) => {
+                      if (typeof value === 'string') {
+                        return (
+                          <Box 
+                            key={index}
+                            component="img"
+                            src={value}
+                            alt={`ID Proof ${key}`}
+                            sx={{ 
+                              width: 240, 
+                              height: 180, 
+                              objectFit: 'cover', 
+                              border: '1px solid #ddd',
+                              borderRadius: 1,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(value, '_blank')}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
                   </Box>
                 </Grid>
               )}
@@ -6177,6 +6662,36 @@ const AdminDashboard = () => {
           </>
         )}
       </Drawer>
+
+      {/* Status Update Modal */}
+      <StatusUpdateModal
+        open={isStatusUpdateModalOpen}
+        order={selectedOrder}
+        onClose={() => {
+          setIsStatusUpdateModalOpen(false);
+          setSelectedOrder(null);
+        }}
+        onUpdateStatus={handleUpdateOrderStatus}
+      />
+
+      {/* Seller Details Modal */}
+      <SellerDetailsModal
+        open={isSellerDetailsModalOpen}
+        seller={selectedSellerDetails}
+        onClose={() => setIsSellerDetailsModalOpen(false)}
+      />
+      
+      {snackbar.open && (
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      )}
     </Box>
   );
 };
