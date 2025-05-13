@@ -1485,7 +1485,7 @@ const SellerDashboard = ({ setIsSeller }) => {
           {/* Wallet and Revenue Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {/* Wallet Balance Card */}
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Paper
                 elevation={3}
                 sx={{
@@ -1512,10 +1512,10 @@ const SellerDashboard = ({ setIsSeller }) => {
                 </Box>
                 <WithdrawIcon sx={{ fontSize: 48, opacity: 0.8 }} />
               </Paper>
-            </Grid>
+            </Grid> */}
 
             {/* Revenue Card */}
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Paper
                 elevation={3}
                 sx={{
@@ -1542,7 +1542,7 @@ const SellerDashboard = ({ setIsSeller }) => {
                 </Box>
                 <RevenueIcon sx={{ fontSize: 48, opacity: 0.8 }} />
               </Paper>
-            </Grid>
+            </Grid> */}
           </Grid>
 
           {/* Existing Dashboard Cards */}
@@ -1581,160 +1581,325 @@ const SellerDashboard = ({ setIsSeller }) => {
             </Grid>
           </Grid>
 
-          {/* Recent Orders */}
-          {/* <Box mt={4}>
-            <SectionHeading variant="h5" gutterBottom>
-              Recent Orders
-            </SectionHeading>
-            <StyledTableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Order ID</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Customer</TableCell>
-                    <TableCell>Price</TableCell>
-                    <TableCell>Profit</TableCell>
-                    <TableCell>Grand Total</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sellerOrders.length > 0 ? (
-                    sellerOrders.slice(0, 5).map((order) => (
-                      <TableRow
-                        key={order.id}
-                        hover
-                        sx={{
-                          bgcolor: order.assignedAt
-                            ? alpha(theme.palette.secondary.light, 0.1)
-                            : "inherit",
-                          "&:hover": {
-                            bgcolor: order.assignedAt
-                              ? alpha(theme.palette.secondary.light, 0.2)
-                              : alpha(theme.palette.primary.light, 0.1),
-                          },
+          {/* New Dashboard Stats Boxes */}
+          <Grid container spacing={3} sx={{ mt: 4 }}>
+            {/* Sales Stat Box */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: "#f5f9ff",
+                  height: "100%",
+                }}
+              >
+                <Typography variant="h6" color="primary" gutterBottom>
+                  Sales Stat
+                </Typography>
+                <Box sx={{ height: 150, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {/* Placeholder for a chart - in real implementation would use chart library */}
+                  <Box 
+                    sx={{ 
+                      width: "100%", 
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between"
+                    }}
+                  >
+                    {[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0].map((value) => (
+                      <Typography 
+                        key={value} 
+                        variant="caption" 
+                        sx={{ 
+                          fontSize: "0.6rem", 
+                          color: "text.secondary",
+                          lineHeight: 0.8
                         }}
                       >
-                        <TableCell>
-                          {order.orderNumber || order.id.substring(0, 8)}
-                        </TableCell>
-                        <TableCell>{formatDate(order.createdAt)}</TableCell>
-                        <TableCell>
-                          {order.customerName ||
-                            order.customerEmail ||
-                            "Anonymous"}
-                        </TableCell>
-                        <TableCell>
-                          $
-                          {Number(
-                            order.total || order.totalAmount || 0,
-                          ).toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: "medium",
-                              color: "success.main",
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                          >
-                            $
-                            {(
-                              Number(order.total || order.totalAmount || 0) *
-                              0.23
-                            ).toFixed(2)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: "medium",
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                          >
-                            $
-                            {(
-                              Number(order.total || order.totalAmount || 0) +
-                              Number(order.total || order.totalAmount || 0) *
-                                0.23
-                            ).toFixed(2)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={order.status}
-                            color={
-                              order.status === "completed"
-                                ? "success"
-                                : order.status === "processing"
-                                  ? "info"
-                                  : order.status === "assigned"
-                                    ? "primary"
-                                    : order.status === "cancelled"
-                                      ? "error"
-                                      : "default"
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: "flex", gap: 1 }}>
-                            <Tooltip title="View Order Details">
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() => handleViewOrderDetails(order)}
-                              >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            {order.status === "assigned" && (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="primary"
-                                onClick={() => handlePickOrder(order.id)}
-                              >
-                                PICK
-                              </Button>
-                            )}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center">
-                        <Box sx={{ py: 3 }}>
-                          <Typography color="textSecondary">
-                            No orders yet
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </StyledTableContainer>
-            {sellerOrders.length > 5 && (
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => setActiveTab("orders")}
-                  endIcon={<OrderIcon />}
+                        {value}
+                      </Typography>
+                    ))}
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Category Wise Product Count */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: "#ffffff",
+                  height: "100%",
+                }}
+              >
+                <Typography variant="h6" color="primary" gutterBottom>
+                  Category wise product count
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="body2">Women Clothing & Fashion</Typography>
+                    <Typography variant="body2" color="primary">16</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="body2">Men Clothing & Fashion</Typography>
+                    <Typography variant="body2" color="primary">16</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="body2">Computers-Cameras-Accessories</Typography>
+                    <Typography variant="body2" color="primary">16</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="body2">Kids & toy</Typography>
+                    <Typography variant="body2" color="primary">15</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="body2">Sports & outdoor</Typography>
+                    <Typography variant="body2" color="primary">10</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography variant="body2">Automobile & Motorcycle</Typography>
+                    <Typography variant="body2" color="primary">7</Typography>
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Orders This Month */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: "#ffffff",
+                  height: "100%",
+                }}
+              >
+                <Typography variant="h6" color="primary" gutterBottom>
+                  Orders
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  This Month
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Avatar sx={{ bgcolor: "#e3f2fd", color: "#2196F3", mr: 2 }}>
+                      <ShoppingCartCheckoutIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        New Order
+                      </Typography>
+                      <Typography variant="h5" color="primary">
+                        2
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Avatar sx={{ bgcolor: "#ffebee", color: "#f44336", mr: 2 }}>
+                      <CloseIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Cancelled
+                      </Typography>
+                      <Typography variant="h5" color="primary">
+                        0
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Avatar sx={{ bgcolor: "#e8f5e9", color: "#4caf50", mr: 2 }}>
+                      <PackageIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        On delivery
+                      </Typography>
+                      <Typography variant="h5" color="primary">
+                        0
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Avatar sx={{ bgcolor: "#e0f7fa", color: "#00bcd4", mr: 2 }}>
+                      <AssignmentIndIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Delivered
+                      </Typography>
+                      <Typography variant="h5" color="primary">
+                        0
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Purchased Package */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: "#ffffff",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <Typography variant="h6" color="primary" gutterBottom>
+                  Purchased Package
+                </Typography>
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 2 }}>
+                  <Avatar
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      bgcolor: "#2196F3",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: "50%",
+                        bgcolor: "white",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: "50%",
+                          bgcolor: "#2196F3",
+                        }}
+                      />
+                    </Box>
+                  </Avatar>
+                </Box>
+                <Typography variant="body2" color="text.secondary" align="center">
+                  Current Package:
+                </Typography>
+                <Typography variant="h6" color="primary" align="center" gutterBottom>
+                  platinum shop
+                </Typography>
+                <Typography variant="body2" align="center" gutterBottom>
+                  Product Upload Limit: 1000 Times
+                </Typography>
+                <Typography variant="body2" align="center" gutterBottom>
+                  Package Expires at: 2026-02-16
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  sx={{ 
+                    mt: 'auto', 
+                    textTransform: 'none',
+                    bgcolor: "#e3f2fd",
+                    color: "#2196F3",
+                    "&:hover": {
+                      bgcolor: "#bbdefb",
+                    }
+                  }}
                 >
-                  View All Orders
+                  Upgrade Package
                 </Button>
-              </Box>
-            )}
-          </Box> */}
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Sold Amount Section */}
+          <Grid container spacing={3} sx={{ mt: 4 }}>
+            {/* Sold Amount Card */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: "#f5f9ff",
+                  height: "100%",
+                }}
+              >
+                <Typography variant="h6" color="primary" gutterBottom>
+                  Sold Amount
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Your Sold Amount (Current day)
+                  </Typography>
+                  <Typography variant="h3" color="primary" gutterBottom>
+                    $0.00
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Last day: $0.00
+                  </Typography>
+                </Box>
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Your sold amount (current month)
+                  </Typography>
+                  <Typography variant="h3" color="primary" gutterBottom>
+                    $0.00
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Last Month: $0.00
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Today Views Card */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: "#ffffff",
+                  height: "100%",
+                }}
+              >
+                <Typography variant="h6" color="primary" gutterBottom>
+                  Today Views
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "200px"
+                  }}
+                >
+                  <Typography variant="h2" color="primary">
+                    0
+                  </Typography>
+                </Box>
+                
+                {/* Verified badge */}
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                  <Box
+                    component="img"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='60' viewBox='0 0 200 60'%3E%3Crect width='200' height='60' fill='%23f9d56e' rx='10' ry='10'/%3E%3Ctext x='100' y='35' font-family='Arial' font-size='20' text-anchor='middle' fill='%23885a0b' font-weight='bold'%3E★ VERIFIED ★%3C/text%3E%3C/svg%3E"
+                    alt="Verified Badge"
+                    sx={{ height: 60 }}
+                  />
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
 
           <Box mt={6}>
             <SectionHeading variant="h5" gutterBottom>
@@ -3317,6 +3482,60 @@ const SellerDashboard = ({ setIsSeller }) => {
         <Typography variant="h4" gutterBottom fontWeight="medium">
           Money Withdrawal
         </Typography>
+
+        {/* Balance Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6}>
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                p: 3, 
+                borderRadius: 2, 
+                background: 'linear-gradient(135deg, #1976d2, #2196f3)', 
+                color: 'white',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%'
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Wallet Balance</Typography>
+                <Box component="span" sx={{ fontSize: 36 }}>
+                  🏦
+                </Box>
+              </Box>
+              <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
+                ${(sellerData?.walletBalance || 0).toFixed(2)}
+              </Typography>
+              <Typography variant="body2">Available for withdrawal</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                p: 3, 
+                borderRadius: 2, 
+                background: 'linear-gradient(135deg, #2e7d32, #4caf50)', 
+                color: 'white',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%'
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Pending</Typography>
+                <Box component="span" sx={{ fontSize: 36 }}>
+                  💲
+                </Box>
+              </Box>
+              <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
+                ${(sellerData?.pendingAmount || 0).toFixed(2)}
+              </Typography>
+              <Typography variant="body2">Total pending amount</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
 
         {/* Withdrawal Request Form */}
         <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
