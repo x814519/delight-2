@@ -4614,9 +4614,11 @@ const AdminDashboard = () => {
     };
 
     const handleAmountChange = (event) => {
-      // Ensure only positive numbers are entered
+      // Allow positive numbers including decimals
       const value = event.target.value;
-      if (value === '' || (Number(value) >= 0 && !value.includes('.'))) {
+      // Regex to validate positive numbers with up to 2 decimal places
+      const regex = /^\d*\.?\d{0,2}$/;
+      if (value === '' || regex.test(value)) {
         setAmount(value);
       }
     };
@@ -4649,7 +4651,9 @@ const AdminDashboard = () => {
         return;
       }
       
-      if (parseFloat(amount) <= 0) {
+      const amountToAdd = parseFloat(amount);
+      
+      if (isNaN(amountToAdd) || amountToAdd <= 0) {
         alert('Please enter a valid amount greater than 0.');
         return;
       }
@@ -4668,11 +4672,10 @@ const AdminDashboard = () => {
         const sellerData = sellerDoc.data();
         const currentBalance = sellerData.walletBalance || 0;
         const currentRevenue = sellerData.totalRevenue || 0;
-        const amountToAdd = parseFloat(amount);
         
-        // Calculate new values
-        const newBalance = currentBalance + amountToAdd;
-        const newRevenue = currentRevenue + amountToAdd;
+        // Calculate new values - use toFixed(2) to ensure proper decimal handling
+        const newBalance = parseFloat((currentBalance + amountToAdd).toFixed(2));
+        const newRevenue = parseFloat((currentRevenue + amountToAdd).toFixed(2));
 
         // Update both wallet balance and revenue
         await updateDoc(sellerDocRef, {
@@ -4735,13 +4738,14 @@ const AdminDashboard = () => {
           <TextField
             fullWidth
             label="Amount"
-            type="number"
+            type="text"
             value={amount}
             onChange={handleAmountChange}
             sx={{ mb: 2 }}
             InputProps={{
               startAdornment: <InputAdornment position="start">$</InputAdornment>,
             }}
+            placeholder="0.00"
           />
           <Button
             variant="contained"
