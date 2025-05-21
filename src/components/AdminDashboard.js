@@ -4130,7 +4130,7 @@ const AdminDashboard = () => {
                         order.source === 'admin' && 
                         order.sellerInfo?.email === selectedSellerEmail
                       )
-                      .slice(0, 10)
+                      // .slice(0, 10) - Removed this limitation to show all orders
                       .map((order) => (
                         <TableRow 
                           key={order.id}
