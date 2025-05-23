@@ -17,6 +17,7 @@ import Setup from './components/Setup';
 import { Container, CssBaseline, ThemeProvider, createTheme, Toolbar } from '@mui/material';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { NotificationSoundProvider } from './utils/notificationSound';
 
 const theme = createTheme();
 
@@ -95,19 +96,21 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Setup />
-      <Router>
-        <AppContent 
-          isAdmin={isAdmin} 
-          setIsAdmin={setIsAdmin}
-          isCustomer={isCustomer}
-          setIsCustomer={setIsCustomer}
-          isSeller={isSeller}
-          setIsSeller={setIsSeller}
-          isAuthenticated={isAuthenticated}
-          searchTerm={searchTerm}
-          onSearch={handleSearch}
-        />
-      </Router>
+      <NotificationSoundProvider>
+        <Router>
+          <AppContent 
+            isAdmin={isAdmin} 
+            setIsAdmin={setIsAdmin}
+            isCustomer={isCustomer}
+            setIsCustomer={setIsCustomer}
+            isSeller={isSeller}
+            setIsSeller={setIsSeller}
+            isAuthenticated={isAuthenticated}
+            searchTerm={searchTerm}
+            onSearch={handleSearch}
+          />
+        </Router>
+      </NotificationSoundProvider>
     </ThemeProvider>
   );
 }
