@@ -12,7 +12,13 @@ import {
   alpha,
   Menu,
   MenuItem,
-  useTheme
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
@@ -33,7 +39,9 @@ import {
   getDoc,
   doc,
   updateDoc,
-  arrayUnion
+  arrayUnion,
+  deleteDoc,
+  getDocs
 } from 'firebase/firestore';
 
 const ChatWindowContainer = styled(Box)(({ theme }) => ({
@@ -157,6 +165,11 @@ const ChatWindow = ({
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const theme = useTheme();
   const [sellerStatus, setSellerStatus] = useState(null);
+  
+  // Add state for delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   // Load seller status from localStorage and listen for changes
   useEffect(() => {
@@ -421,6 +434,78 @@ const ChatWindow = ({
     handleMenuClose();
   };
 
+  // Handle message deletion (new function)
+  const handleMessageDelete = async (messageId) => {
+    if (!messageId || !selectedChatId) return;
+    
+    try {
+      setDeleteLoading(true);
+      
+      // Delete the message from the Firestore collection
+      await deleteDoc(doc(db, 'chats', selectedChatId, 'messages', messageId));
+      
+      // Update the messages list in state
+      setMessages(prevMessages => prevMessages.filter(msg => msg.id !== messageId));
+      
+      // Check if we need to update the last message in the chat document
+      const chatRef = doc(db, 'chats', selectedChatId);
+      const chatDoc = await getDoc(chatRef);
+      
+      if (chatDoc.exists()) {
+        const chatData = chatDoc.data();
+        
+        // If the deleted message was the last message, update to the previous message
+        // Get all remaining messages
+        const messagesRef = collection(db, 'chats', selectedChatId, 'messages');
+        const messagesQuery = query(messagesRef, orderBy('timestamp', 'desc'), where("id", "!=", messageId));
+        const messagesSnapshot = await getDocs(messagesQuery);
+        
+        if (!messagesSnapshot.empty) {
+          // Get the most recent message (which is now the last message)
+          const lastMessage = messagesSnapshot.docs[0].data();
+          
+          // Update the chat document with the new last message
+          await updateDoc(chatRef, {
+            lastMessage: {
+              text: lastMessage.text || '',
+              imageUrl: lastMessage.imageUrl || null,
+              senderUid: lastMessage.senderUid,
+              timestamp: lastMessage.timestamp
+            },
+            lastMessageTime: lastMessage.timestamp
+          });
+        }
+      }
+      
+      setDeleteLoading(false);
+      console.log(`Message ${messageId} deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      setDeleteLoading(false);
+    }
+  };
+
+  // Handle confirmation before deleting message
+  const confirmDeleteMessage = (messageId) => {
+    setMessageToDelete(messageId);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle delete confirmation
+  const handleConfirmDelete = () => {
+    if (messageToDelete) {
+      handleMessageDelete(messageToDelete);
+    }
+    setDeleteDialogOpen(false);
+    setMessageToDelete(null);
+  };
+
+  // Handle delete cancellation
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setMessageToDelete(null);
+  };
+
   if (!selectedChatId) {
     return (
       <ChatWindowContainer>
@@ -579,22 +664,60 @@ const ChatWindow = ({
       )}
       
       <MessageContainer>
-        {messages.map((message) => (
-          <Message 
-            key={message.id}
-            message={message}
-            isAdmin={isAdmin}
-          />
-        ))}
-        <div ref={messagesEndRef} />
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            {messages.map((message) => (
+              <Message 
+                key={message.id} 
+                message={message} 
+                isAdmin={isAdmin}
+                onDeleteMessage={isAdmin ? confirmDeleteMessage : undefined} 
+              />
+            ))}
+            <div ref={messagesEndRef} />
+          </>
+        )}
       </MessageContainer>
       
       <InputContainer>
         <ChatInput 
-          onSendMessage={handleSendMessage}
-          currentUserUid={currentUserUid}
+          onSendMessage={handleSendMessage} 
+          isAdmin={isAdmin}
+          selectedChatId={selectedChatId}
+          disabled={!isAdmin && sellerStatus === "inactive"}
         />
       </InputContainer>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCancelDelete}
+      >
+        <DialogTitle>Delete Message</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this message for everyone? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete} 
+            color="error" 
+            variant="contained"
+            disabled={deleteLoading}
+            startIcon={deleteLoading ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ChatWindowContainer>
   );
 };
