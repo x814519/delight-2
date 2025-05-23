@@ -82,7 +82,7 @@ const uploadToFirebase = async (file, currentUserUid, progressCallback = () => {
   });
 };
 
-const ChatInput = ({ onSendMessage, currentUserUid }) => {
+const ChatInput = ({ onSendMessage, currentUserUid, isAdmin, selectedChatId, disabled }) => {
   const [message, setMessage] = useState('');
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -102,6 +102,14 @@ const ChatInput = ({ onSendMessage, currentUserUid }) => {
   const removeImage = () => {
     setImage(null);
     setImagePreview('');
+  };
+
+  const handleKeyDown = (e) => {
+    // Send message on Ctrl+Enter or Cmd+Enter
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit(e);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -169,7 +177,7 @@ const ChatInput = ({ onSendMessage, currentUserUid }) => {
       <InputContainer elevation={1}>
         <IconButton 
           component="label" 
-          disabled={sending}
+          disabled={sending || disabled}
           size={isMobile ? "small" : "medium"}
           sx={{ 
             p: isMobile ? 0.5 : 1,
@@ -193,7 +201,10 @@ const ChatInput = ({ onSendMessage, currentUserUid }) => {
           placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          disabled={sending}
+          onKeyDown={handleKeyDown}
+          disabled={sending || disabled}
+          multiline
+          maxRows={4}
           InputProps={{
             disableUnderline: true,
             sx: {
@@ -206,7 +217,7 @@ const ChatInput = ({ onSendMessage, currentUserUid }) => {
         <IconButton 
           color="primary" 
           type="submit" 
-          disabled={sending || (message.trim() === '' && !image)}
+          disabled={sending || disabled || (message.trim() === '' && !image)}
           size={isMobile ? "small" : "medium"}
           sx={{ 
             p: isMobile ? 0.5 : 1,
