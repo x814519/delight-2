@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Typography, Avatar, Paper, styled, alpha, CircularProgress } from '@mui/material';
+import { Box, Typography, Avatar, Paper, styled, alpha, CircularProgress, IconButton, Menu, MenuItem } from '@mui/material';
 import { Image, Transformation } from 'cloudinary-react';
 import { cloudinary } from '../../utils/cloudinaryConfig';
+import { MoreVert as MoreVertIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 const MessageContainer = styled(Box)(({ theme, isAdmin }) => ({
   display: 'flex',
@@ -165,8 +166,9 @@ const CloudinaryImage = ({ publicId, url, alt, onClick }) => {
   return null;
 };
 
-const Message = ({ message, isAdmin }) => {
-  const { text, imageUrl, timestamp, senderName, senderUid } = message;
+const Message = ({ message, isAdmin, onDeleteMessage }) => {
+  const { text, imageUrl, timestamp, senderName, senderUid, id } = message;
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   
   // Display "Customer Care" instead of "mdziq962#@gmail.com" for sender name
   const displayName = senderName === "mdziq962#@gmail.com" || senderName === "Customer Care" ? "Customer Care" : senderName;
@@ -206,6 +208,25 @@ const Message = ({ message, isAdmin }) => {
 
   const isCloudinaryImage = imageUrl && imageUrl.includes('cloudinary.com');
 
+  // Handle opening the message menu
+  const handleMenuOpen = (event) => {
+    event.stopPropagation();
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  // Handle closing the message menu
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+
+  // Handle message deletion
+  const handleDeleteMessage = () => {
+    handleMenuClose();
+    if (onDeleteMessage) {
+      onDeleteMessage(id);
+    }
+  };
+
   return (
     <MessageContainer isAdmin={isCurrentUserMessage}>
       {!isCurrentUserMessage && (
@@ -241,16 +262,43 @@ const Message = ({ message, isAdmin }) => {
             )
           )}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            {/* <MessageTimeStamp variant="caption">
+            <MessageTimeStamp variant="caption">
               {formattedTime}
-            </MessageTimeStamp> */}
-            <Typography variant="caption" sx={{ 
-              fontSize: '0.65rem', 
-              color: 'text.disabled',
-              fontStyle: 'italic'
-            }}>
-              {/* {getExpirationTime()} */}
-            </Typography>
+            </MessageTimeStamp>
+            
+            {/* Add delete option for admin users */}
+            {isAdmin && (
+              <>
+                <IconButton 
+                  size="small" 
+                  onClick={handleMenuOpen}
+                  sx={{ 
+                    padding: '2px',
+                    color: isCurrentUserMessage ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'
+                  }}
+                >
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
+                <Menu
+                  anchorEl={menuAnchorEl}
+                  open={Boolean(menuAnchorEl)}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  <MenuItem onClick={handleDeleteMessage}>
+                    <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                    Delete for everyone
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
           </Box>
         </MessageContent>
       </MessageBubble>
