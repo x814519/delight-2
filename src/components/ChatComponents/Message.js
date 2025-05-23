@@ -241,7 +241,8 @@ const Message = ({ message, isAdmin, onDeleteMessage }) => {
           {text && (
             <Typography variant="body2" sx={{
               fontSize: {xs: '0.9rem', sm: '0.95rem', md: '1rem'},
-              wordBreak: 'break-word'
+              wordBreak: 'break-word',
+              whiteSpace: 'pre-wrap'
             }}>
               {text}
             </Typography>
