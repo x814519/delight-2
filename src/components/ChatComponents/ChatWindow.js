@@ -23,7 +23,8 @@ import {
 import { 
   ArrowBack as ArrowBackIcon,
   MoreVert as MoreVertIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import Message from './Message';
 import ChatInput from './ChatInput';
@@ -160,6 +161,7 @@ const ChatWindow = ({
 }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const messagesEndRef = useRef(null);
   const [localUserDetails, setLocalUserDetails] = useState(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -506,6 +508,53 @@ const ChatWindow = ({
     setMessageToDelete(null);
   };
 
+  // Function to manually refresh messages
+  const refreshMessages = async () => {
+    if (!selectedChatId || refreshing) return;
+    
+    setRefreshing(true);
+    
+    try {
+      // Requery the messages collection
+      const messagesRef = collection(db, 'chats', selectedChatId, 'messages');
+      const messagesQuery = query(messagesRef, orderBy('timestamp', 'asc'));
+      
+      const snapshot = await getDocs(messagesQuery);
+      const messagesList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      setMessages(messagesList);
+      
+      // Mark messages as read
+      if (messagesList.length > 0) {
+        await markMessagesAsRead();
+      }
+      
+      // Check if seller status has changed
+      if (!isAdmin) {
+        const sellerId = localStorage.getItem('sellerId');
+        if (sellerId) {
+          const sellerRef = doc(db, 'sellers', sellerId);
+          const sellerDoc = await getDoc(sellerRef);
+          
+          if (sellerDoc.exists()) {
+            const firebaseStatus = sellerDoc.data().status;
+            localStorage.setItem('sellerStatus', firebaseStatus);
+            setSellerStatus(firebaseStatus);
+          }
+        }
+      }
+      
+      console.log('Chat refreshed manually');
+    } catch (error) {
+      console.error('Error refreshing messages:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   if (!selectedChatId) {
     return (
       <ChatWindowContainer>
@@ -581,6 +630,30 @@ const ChatWindow = ({
         <Typography variant="h6">
           {displayName}
         </Typography>
+        
+        {/* Refresh button - visible for both admin and sellers */}
+        <Tooltip title="Refresh messages">
+          <IconButton 
+            onClick={refreshMessages} 
+            disabled={refreshing}
+            sx={{ 
+              position: 'absolute', 
+              right: isAdmin ? 40 : 8,  // Position to the left of the menu button for admin
+              top: 8, 
+              color: 'white',
+              [theme.breakpoints.down('sm')]: {
+                top: 12
+              }
+            }}
+            size="small"
+          >
+            {refreshing ? 
+              <CircularProgress size={20} color="inherit" /> : 
+              <RefreshIcon fontSize="small" />
+            }
+          </IconButton>
+        </Tooltip>
+        
         {isAdmin && (
           <IconButton 
             size="small" 
