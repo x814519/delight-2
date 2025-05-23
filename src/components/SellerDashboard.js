@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Typography,
@@ -104,6 +104,7 @@ import {
   updatePassword,
 } from "firebase/auth";
 import { Chat } from "./ChatComponents";
+import { useNotificationSound } from '../utils/notificationSound';
 
 const drawerWidth = 260;
 // const navbarHeight = 64;
@@ -448,6 +449,7 @@ const SellerDashboard = ({ setIsSeller }) => {
   const [productsPerPage, setProductsPerPage] = useState(12);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const { playNotificationSound } = useNotificationSound();
 
   // Add new effect to fetch admin products when dialog opens
   useEffect(() => {
@@ -3966,43 +3968,27 @@ const SellerDashboard = ({ setIsSeller }) => {
 
   // Function to handle when a seller sends a message
   const handleSellerMessageSent = () => {
+    console.log('Seller sent a message, current unread count:', unreadConversationsCount);
+    
+    // Play notification sound for new messages
+    playNotificationSound();
+    
     // Clear the unread conversations indicator
     if (unreadConversationsCount > 0) {
+      console.log('Clearing seller unread conversations count');
       setUnreadConversationsCount(0);
       // Save to localStorage to persist across page refreshes
-      localStorage.setItem('unreadConversationsCount', '0');
+      localStorage.setItem('sellerUnreadConversationsCount', '0');
     }
   };
 
   const renderConversationsContent = () => (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom fontWeight="medium">
-        Conversations
-      </Typography>
-      {sellerData?.status === 'frozen' && (
-        <Box 
-          sx={{ 
-            p: 2, 
-            mb: 3, 
-            textAlign: 'center', 
-            bgcolor: '#FFEBEE', 
-            borderRadius: 2,
-            display: { xs: 'block', sm: 'none' }, // Only show on mobile
-            position: 'sticky',
-            top: 0,
-            zIndex: 10
-          }}
-        >
-          <Typography variant="subtitle1" color="error.dark" fontWeight="bold">
-            Your account is frozen.
-          </Typography>
-        </Box>
-      )}
+    <Box sx={{ height: '100%', overflow: 'hidden' }}>
       <Chat 
         isAdmin={false} 
         onMessageSent={handleSellerMessageSent}
       />
-    </Container>
+    </Box>
   );
 
   const renderSettingsContent = () => (
@@ -4953,7 +4939,6 @@ const SellerDashboard = ({ setIsSeller }) => {
 
 //responsive sidebar
 const [toogle, setToogle] = useState(false)
-
 
   return (
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }} >
