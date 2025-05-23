@@ -104,7 +104,7 @@ import {
   updatePassword,
 } from "firebase/auth";
 import { Chat } from "./ChatComponents";
-import { useNotificationSound } from '../utils/notificationSound';
+import { useNotificationSound } from '../utils';
 
 const drawerWidth = 260;
 // const navbarHeight = 64;
