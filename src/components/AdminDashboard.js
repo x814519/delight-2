@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { styled, useTheme, alpha } from '@mui/material/styles';
 import {
@@ -76,6 +76,7 @@ import { Chat } from './ChatComponents';
 import StatusUpdateModal from './StatusUpdateModal';
 import WithdrawalRequestsManager from './WithdrawalRequestsManager';
 import { addDummyProducts } from '../utils/dummyProducts';
+import { useNotificationSound } from '../utils/notificationSound';
 
 const drawerWidth = 260;
 
@@ -1361,6 +1362,8 @@ const AdminDashboard = () => {
   const [orderEmailSearch, setOrderEmailSearch] = useState('');
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
+  
+  const { playNotificationSound } = useNotificationSound();
   
   useEffect(() => {
     if (activeTab === 'storehouse' || activeTab === 'products') {
@@ -3361,7 +3364,7 @@ const AdminDashboard = () => {
           </Typography> */}
           <Chat 
             isAdmin={true} 
-            onMessageSent={handleAdminMessageSent}
+            onMessageSent={handleNewMessage}
           />
         </Box>
       );
@@ -5521,16 +5524,10 @@ const AdminDashboard = () => {
   };
 
   // Function to handle when an admin sends a message
-  const handleAdminMessageSent = () => {
-    console.log('Admin sent a message, current unread count:', unreadConversationsCount);
-    // Clear the unread conversations indicator
-    if (unreadConversationsCount > 0) {
-      console.log('Clearing admin unread conversations count');
-      setUnreadConversationsCount(0);
-      // Save to localStorage to persist across page refreshes
-      localStorage.setItem('adminUnreadConversationsCount', '0');
-    }
-  };
+  const handleNewMessage = useCallback(() => {
+    // Play notification sound
+    playNotificationSound();
+  }, [playNotificationSound]);
 
   return (
 <Box className={'relative'} sx={{ display: 'flex', flexDirection: 'column', height: '100%', mt: `${navbarHeight}px` }}>      {/* Main content area with sidebar */}
