@@ -22,6 +22,7 @@ import {
 import { cloudinary } from '../../utils/cloudinaryConfig';
 import { initializeChatCleanupWorker } from '../../utils/chatCleanup';
 import { useNavigate } from 'react-router-dom';
+import { useNotificationSound } from '../../utils/notificationSound';
 
 // Add a flag to track if Cloudinary is properly configured
 let isCloudinaryConfigured = false;
@@ -108,6 +109,7 @@ const Chat = ({ isAdmin, onMessageSent }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
+  const { playNotificationSound } = useNotificationSound();
   
   // Initialize the chat cleanup worker once when the component mounts
   useEffect(() => {
@@ -244,6 +246,26 @@ const Chat = ({ isAdmin, onMessageSent }) => {
     }
     
     const unsubscribe = onSnapshot(chatQuery, async (snapshot) => {
+      // Process chat updates and additions to detect new messages
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'modified') {
+          const chatData = change.doc.data();
+          const lastMessage = chatData.lastMessage;
+          
+          // Check if the last message was sent by someone else and play notification sound
+          if (lastMessage && lastMessage.senderUid !== currentUserUid) {
+            // Check unread count to determine if this is a new message
+            const unreadCountField = isAdmin ? 'adminUnreadCount' : 'sellerUnreadCount';
+            const hasUnread = chatData[unreadCountField] && chatData[unreadCountField].length > 0;
+            
+            if (hasUnread) {
+              // Play notification sound for new messages
+              playNotificationSound();
+            }
+          }
+        }
+      });
+      
       // Map the chat documents to state, including other user details
       const chatPromises = snapshot.docs.map(async (docSnapshot) => {
         const chatData = docSnapshot.data();
@@ -306,7 +328,7 @@ const Chat = ({ isAdmin, onMessageSent }) => {
     });
     
     return () => unsubscribe();
-  }, [currentUserUid, isAdmin]);
+  }, [currentUserUid, isAdmin, playNotificationSound]);
   
   // Fetch other user details when selected chat changes
   useEffect(() => {
