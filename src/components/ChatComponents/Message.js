@@ -262,9 +262,12 @@ const Message = ({ message, isAdmin, onDeleteMessage }) => {
             )
           )}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <MessageTimeStamp variant="caption">
-              {formattedTime}
-            </MessageTimeStamp>
+            {/* Only show timestamp for admin users */}
+            {isAdmin && (
+              <MessageTimeStamp variant="caption">
+                {formattedTime}
+              </MessageTimeStamp>
+            )}
             
             {/* Add delete option for admin users */}
             {isAdmin && (
